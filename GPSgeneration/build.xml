@@ -24,7 +24,7 @@
   <!-- Include xjc (Schema to Java) task into ant-->
 	<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
   	<classpath>
-  	  <fileset dir="ant-lib" includes="*.jar" />
+  	  <fileset dir="ant-lib" includes="**/*.jar" />
   	</classpath>
 	</taskdef>
 
