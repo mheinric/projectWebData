@@ -23,6 +23,7 @@ public class Main {
 	 * @throws DatatypeConfigurationException 
 	 */
 	public static void main(String[] args) throws JAXBException, URISyntaxException, IOException, DatatypeConfigurationException {
+		parseArgs(args) ;
 		SimpleRouting sr = new SimpleRouting(dataFolder) ;
 		sr.doRouting(inputFile, outFile) ;
 	}
