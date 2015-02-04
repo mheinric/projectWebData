@@ -15,6 +15,10 @@
   <property name="gpx.schema" value="data/schemas/gpx.xsd"/>
   <property name="gpx.package" value="org.gpsgeneration.gpx"/>
   <property name="gpx.dir" value="${src.dir}/org/gpsgeneration/gpx"/>
+  
+  <property name="eventTrace.schema" value="data/schemas/eventTrace.xsd"/>
+  <property name="eventTrace.package" value="org.gpsgeneration.eventTrace"/>
+  <property name="eventTrace.dir" value="${src.dir}/org/gpsgeneration/eventTrace"/>
  
   <path id="classpath">
     <fileset dir="${lib.dir}" includes="**/*.jar"/>
@@ -32,6 +36,9 @@
 	<target name="generate" description="Generate Java source code from XML schema">
 		<xjc destdir="src" package="${gpx.package}" schema="${gpx.schema}" >
 			<produces dir="${gpx.dir}" includes="*.java"/>
+		</xjc>
+		<xjc destdir="src" package="${eventTrace.package}" schema="${eventTrace.schema}" >
+			<produces dir="${eventTrace.dir}" includes="*.java"/>
 		</xjc>
 	</target>
 

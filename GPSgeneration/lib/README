@@ -1,0 +1,2 @@
+All the jar files in this directory, or in a sub directory will be automatically added to the classpath.
+Put here the java libraries you want to use.

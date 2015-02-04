@@ -7,15 +7,18 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 
 import org.gpsgeneration.gpx.GpxType;
 import org.gpsgeneration.gpx.ObjectFactory;
+import org.xml.sax.SAXException;
 
 /**
  * Class that provides utility methods to write and read GpxType object 
@@ -28,7 +31,19 @@ public class GpxIO {
 	private static final ObjectFactory objectFactory = new ObjectFactory() ;
 	public static final String GPX_PATH="org.gpsgeneration.gpx" ;
 	private static JAXBContext jcontext ; 
+	private static String GPX_SCHEMA_FILE = "schemas/gpx.xsd" ;
 	private static Schema GPX_SCHEMA ;
+	
+	static {
+		SchemaFactory fact = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI) ;
+		URL url = ClassLoader.getSystemResource(GPX_SCHEMA_FILE) ;
+		try {
+			GPX_SCHEMA = fact.newSchema(url) ;
+		} catch (SAXException e) {
+			e.printStackTrace() ;
+			System.exit(1) ;
+		}
+	}
 
 	static {
 		try {
