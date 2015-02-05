@@ -49,12 +49,13 @@ public class OutputGPSTrace {
 	 * @return
 	 * @throws DatatypeConfigurationException 
 	 */
-	public static List<SimpleGpxPoint> getPoints(GraphHopper gh, PointList l, XMLGregorianCalendar date) 
+	public static List<SimpleGpxPoint> getPoints(GraphHopper gh, PointList l, 
+			XMLGregorianCalendar date, String mode) 
 			throws DatatypeConfigurationException {
 		assert(l.size() > 0) ;
 		List<SimpleGpxPoint> outl = new ArrayList<>() ;
-		FlagEncoder e  = gh.getEncodingManager().getEncoder("car") ;
-		//gh.getEncodingManager().getEncoder("") ;
+		FlagEncoder e  = gh.getEncodingManager().getEncoder(mode) ;
+	
 		LocationIndex index = gh.getLocationIndex() ;
 		DatatypeFactory fact = DatatypeFactory.newInstance() ;
 		outl.add(new SimpleGpxPoint(l.getLat(0), l.getLon(0), (XMLGregorianCalendar) date.clone())) ;
@@ -70,6 +71,7 @@ public class OutputGPSTrace {
 		{
 			QueryResult res = index.findClosest(last.lat(), last.lon(), EdgeFilter.ALL_EDGES) ;
 			double speed = e.getSpeed(res.getClosestEdge().getFlags()) ;
+			speed = Math.max(speed, 5) ;
 			double nextLat = l.getLat(i) ;
 			double nextLon = l.getLon(i) ;
 			double distance = distance(last.lat(), last.lon(), nextLat, nextLon) ;

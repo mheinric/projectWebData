@@ -1,16 +1,25 @@
 package org.gpsgeneration;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Properties;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 
+import com.graphhopper.reader.OSMElement;
+import com.graphhopper.reader.pbf.PbfReader;
+import com.graphhopper.reader.pbf.Sink;
+
 public class Main {
-	
+
 	static String inputFile ;
 	static String dataFolder ;
 	static String outFile ;
+	
+	static Properties config = new Properties() ;
 
 	/**
 	 * Entry point of the application
@@ -22,15 +31,39 @@ public class Main {
 	 */
 	public static void main(String[] args) throws JAXBException, URISyntaxException, IOException, DatatypeConfigurationException {
 		parseArgs(args) ;
+
+		Sink s = new Sink() {
+			private int i = 0 ;
+
+			@Override
+			public void process(OSMElement e) {
+				if(e.hasTag("natural", "coastline"))
+				{
+					i++ ;
+					if(i % 100000 == 0)
+						System.out.println(i) ;
+				}
+
+			}
+
+			@Override
+			public void complete() {
+				System.out.println("Total : " + i) ;
+
+			}
+		};
+
+		PbfReader reader = new PbfReader(new FileInputStream(dataFolder + "/map.osm.pbf"), s, 1) ;
+		//reader.run() ;
+		//System.exit(0) ;
 		SimpleRouting sr = new SimpleRouting(dataFolder) ;
 		sr.doRouting(inputFile, outFile) ;
 	}
-	
+
 	public static void parseArgs(String[] args){
 		int i = 0 ;
 		while(i < args.length)
 		{
-			System.out.println(args[i]) ;
 			switch(args[i])
 			{
 			case "-o" :
@@ -43,7 +76,7 @@ public class Main {
 				outFile = args[i+1] ;
 				i += 2 ;
 				break ;
-				
+
 			default :
 				if(dataFolder == null)
 					dataFolder = args[i] ;
@@ -56,7 +89,7 @@ public class Main {
 						System.err.println("Unexpected argument : " + args[i]) ;
 						printUsage() ;
 						System.exit(1) ;
- 					}
+					}
 				}
 				i++ ;
 				break ;
@@ -71,7 +104,7 @@ public class Main {
 			outFile = "out.gpx" ;
 	}
 
-	
+
 	public static void printUsage(){
 		System.err.println("Usage : java -jar Gpsgeneration.jar [-o <output file>] <data folder> <input file>") ;
 		System.err.println() ;
@@ -82,5 +115,15 @@ public class Main {
 		System.err.println("<input file> : the name of the input xml file, containing " +
 				"the sequence of events") ;
 		System.err.println("<output file> : (optional) the name of the output file") ;
+	}
+
+	public static void loadConfig(){
+		try {
+			config.load(new FileInputStream(dataFolder + "/config.cfg")) ;
+		} catch (IOException e) {
+			System.err.println("Could not load config file " + e.getMessage()) ;
+		}
+		String timeStep = config.getProperty("timestep", "60") ;
+		OutputGPSTrace.pointTime = Integer.parseInt(timeStep) ;
 	}
 }
