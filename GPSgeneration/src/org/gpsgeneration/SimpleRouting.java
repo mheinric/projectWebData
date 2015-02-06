@@ -1,6 +1,7 @@
 package org.gpsgeneration;
 
 
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -13,11 +14,13 @@ import javax.xml.datatype.DatatypeFactory;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
+import com.graphhopper.reader.OSMElement;
+import com.graphhopper.reader.OSMNode;
+import com.graphhopper.reader.pbf.PbfReader;
+import com.graphhopper.reader.pbf.Sink;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.shapes.GHPlace;
-
-
 
 
 /**
@@ -51,8 +54,15 @@ public class SimpleRouting {
 		throws FileNotFoundException, JAXBException, DatatypeConfigurationException{
 		
 		GHPlace startPlace = new GHPlace(48.2, 2.5) ;
-		GHPlace endPlace = new GHPlace(48.5, 2.6) ;
-		GHRequest request = new GHRequest(startPlace, endPlace).setVehicle(CustomCarEncoder.NAME) ;
+		//GHPlace endPlace = new GHPlace(48.5, 2.6) ;
+	
+		locatePlace st = new locatePlace();
+		OSMNode endPlace = st.find(folderPath.toString(), 48.5, 2.6);
+		System.out.println("EndPlace: Lat: " + endPlace.getLat() + " | Lon: " + endPlace.getLon()) ;
+		
+		GHPlace endplace = new GHPlace( endPlace.getLat(), endPlace.getLon());
+		
+		GHRequest request = new GHRequest(startPlace,  endplace).setVehicle(CustomCarEncoder.NAME) ;
 		GHResponse response = gh.route(request) ;
 		
 		PointList l = response.getPoints() ;
