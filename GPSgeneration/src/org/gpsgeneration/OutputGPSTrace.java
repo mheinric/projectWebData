@@ -89,8 +89,10 @@ public class OutputGPSTrace {
 				last = new LatLon(p.lat, p.lon);
 				distance = distance(last.lat(), last.lon(), nextLat, nextLon) ;
 				segTime = distance / speed * 3600 ;
+				totalTime += pointTime ;
 			}
 			elapsedTime += segTime ;
+			totalTime += segTime ;
 			last = new LatLon(nextLat, nextLon) ;
 			i++ ;
 		}

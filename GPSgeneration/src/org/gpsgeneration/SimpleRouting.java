@@ -1,7 +1,6 @@
 package org.gpsgeneration;
 
 
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,10 +13,7 @@ import javax.xml.datatype.DatatypeFactory;
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
 import com.graphhopper.GraphHopper;
-import com.graphhopper.reader.OSMElement;
 import com.graphhopper.reader.OSMNode;
-import com.graphhopper.reader.pbf.PbfReader;
-import com.graphhopper.reader.pbf.Sink;
 import com.graphhopper.routing.util.EncodingManager;
 import com.graphhopper.util.PointList;
 import com.graphhopper.util.shapes.GHPlace;
@@ -37,7 +33,7 @@ public class SimpleRouting {
 		String userDir = System.getProperty("user.dir") ;
 		folderPath = Paths.get(userDir) ;
 		folderPath = folderPath.resolve(folderName) ;
-		importGraph(gh, "BIKE,FOOT," + CustomCarEncoder.NAME) ;
+		importGraph(gh, "BIKE,FOOT," + TrainFlagEncoder.NAME) ;
 	}
 	
 	private void importGraph(GraphHopper g, String mode){
@@ -63,13 +59,16 @@ public class SimpleRouting {
 		GHPlace endplace = new GHPlace( endPlace.getLat(), endPlace.getLon());
 		
 		GHRequest request = new GHRequest(startPlace,  endplace).setVehicle(CustomCarEncoder.NAME) ;
+
 		GHResponse response = gh.route(request) ;
 		
 		PointList l = response.getPoints() ;
+		if(response.hasErrors())
+			response.getErrors().get(0).printStackTrace() ;
 		System.out.println("route: DONE") ;
 		List<SimpleGpxPoint> sl = OutputGPSTrace.getPoints(gh, l, 
 				DatatypeFactory.newInstance().newXMLGregorianCalendar(2015,2,5,18,0,0,0,0), 
-				CustomCarEncoder.NAME);
+				TrainFlagEncoder.NAME);
 		System.out.println("getPoints: DONE") ;
 
 		GpxIO.write(OutputGPSTrace.convert(sl), outFile);

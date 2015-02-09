@@ -16,16 +16,36 @@
 		<xs:sequence>
 			<xs:element name="fromLocation" type="location"/>
 			<xs:element name="toLocation" type="location"/>
-			<xs:element name="startTime" type="xs:dateTime" />
-			<xs:element name="endTime" type="xs:dateTime" />
+			
+			<xs:element name="startTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="maxEndTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="endTime" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="minStartTime" type="xs:dateTime" minOccurs="0"/>
+			
+			<xs:element name="transport" type="transportType" minOccurs="0" default="car"/>
+			<xs:any minOccurs="0" maxOccurs="unbounded" />
 		</xs:sequence>
 	</xs:complexType>
 	
 	<xs:complexType name="location">
-		<xs:sequence>
-			<xs:element name="lat" type="xs:double" />
-			<xs:element name="long" type="xs:double" />
-		</xs:sequence>
+		<xs:choice>
+			<xs:sequence>
+				<xs:element name="id" type="xs:ID" minOccurs="0" />
+				<xs:element name="lat" type="xs:double" />
+				<xs:element name="long" type="xs:double" />
+				<xs:element name="precision" type="xs:double" minOccurs="0"/>
+				<xs:element name="description" type="xs:string" />
+			</xs:sequence>
+			<xs:element name="refId" type="xs:IDREF"/>
+		<xs:choice>
 	</xs:complexType>
-
+	
+	<xs:simpleType name="transportType" >
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="car"/>
+			<xs:enumeration value="train"/>
+			<!--xs:enumeration value="bike"/-->
+			<xs:enumeration value="foot"/>
+		</xs:restriction>
+	</xs:simpleType>
 </xs:schema>
