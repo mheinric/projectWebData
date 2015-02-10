@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.datatype.DatatypeConfigurationException;
-import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.gpsgeneration.gpx.GpxType;
@@ -30,17 +29,17 @@ import com.graphhopper.util.PointList;
  *
  */
 public class OutputGPSTrace {
-	
+
 	/**
 	 * Radius of earth, in kms
 	 */
 	public static final double EARTH_RADIUS = 6371 ;
-	
+
 	/**
 	 * Number of seconds between any two measurements
 	 */
 	public static int pointTime = 60 ;
-	
+
 	/**
 	 * Produces a series of GPxPoints from a series of points that were obtained by a query.  
 	 * @param gh
@@ -54,24 +53,18 @@ public class OutputGPSTrace {
 		assert(l.size() > 0) ;
 		List<SimpleGpxPoint> outl = new ArrayList<>() ;
 		FlagEncoder e  = gh.getEncodingManager().getEncoder(mode) ;
-	
+
 		LocationIndex index = gh.getLocationIndex() ;
-		DatatypeFactory fact = null ;
-		try{
-			fact = DatatypeFactory.newInstance() ;
-		} catch (DatatypeConfigurationException error) {
-			System.out.println("Fatal Error : " + error.getMessage()) ;
-			System.exit(1) ;
-		}
-		
-		outl.add(new SimpleGpxPoint(l.getLat(0), l.getLon(0), (XMLGregorianCalendar) date.clone())) ;
-		
+		long startDate = SimpleGpxPoint.getTime(date) ;
+
+		outl.add(new SimpleGpxPoint(l.getLat(0), l.getLon(0), startDate)) ;
+
 		//Last point got through
 		LatLon last = new LatLon(outl.get(0).lat, outl.get(0).lon) ;
-		//Time elapsed since last measurment
-		double elapsedTime = 0 ;
-		//Total time since beginning
-		double totalTime = 0 ;
+		//Time elapsed since last measurment in ms
+		long elapsedTime = 0 ;
+		//Total time since beginning in ms
+		long totalTime = 0 ;
 		int i = 1 ;
 		while(i < l.getSize())
 		{
@@ -81,36 +74,37 @@ public class OutputGPSTrace {
 			double nextLat = l.getLat(i) ;
 			double nextLon = l.getLon(i) ;
 			double distance = distance(last.lat(), last.lon(), nextLat, nextLon) ;
-			double segTime = distance / speed * 3600 ;
-			while(elapsedTime + segTime > pointTime)
+			long segTime = (long) (distance / speed * 3600*1000) ;
+			while(elapsedTime + segTime > pointTime*1000)
 			{
-				double diffLat = (nextLat - last.lat()) /distance *speed * (pointTime-elapsedTime)/3600 ;
-				double diffLon = (nextLon - last.lon()) /distance *speed * (pointTime-elapsedTime)/3600 ;
-				XMLGregorianCalendar newDate = (XMLGregorianCalendar) date.clone();
-				newDate.add(fact.newDuration((int) ((totalTime + pointTime - elapsedTime)*1000))) ;
+				totalTime += pointTime*1000 - elapsedTime ;
+				elapsedTime = 0 ;
 				
+				double diffLat = (nextLat - last.lat()) /distance *speed * (pointTime-elapsedTime)/3600/1000 ;
+				double diffLon = (nextLon - last.lon()) /distance *speed * (pointTime-elapsedTime)/3600/1000 ;
+				
+				long newDate = startDate + totalTime ;
+
 				SimpleGpxPoint p = new SimpleGpxPoint(last.lat() + diffLat, last.lon() + diffLon, newDate) ;
 				outl.add(p) ;
 				last = new LatLon(p.lat, p.lon);
 				distance = distance(last.lat(), last.lon(), nextLat, nextLon) ;
-				segTime = distance / speed * 3600 ;
-				totalTime += pointTime - elapsedTime ;
-				elapsedTime = 0 ;
+				segTime = (long) (distance / speed * 3600*1000) ;
 			}
+			
 			elapsedTime += segTime ;
 			totalTime += segTime ;
 			last = new LatLon(nextLat, nextLon) ;
 			i++ ;
 		}
-		XMLGregorianCalendar newDate = (XMLGregorianCalendar) date.clone();
-		newDate.add(fact.newDuration((int) ((totalTime + pointTime - elapsedTime)*1000))) ;
+		long newDate =  (long) (startDate + totalTime + pointTime - elapsedTime) ;
 		SimpleGpxPoint p = new SimpleGpxPoint(last.lat(), last.lon(), newDate) ;
 		outl.add(p) ;
 
 		return outl ;
 	}
-	
-	
+
+
 	public static GpxType convert(List<SimpleGpxPoint> l) {
 		GpxType gpx = new GpxType() ;
 		TrkType trk = new TrkType() ;
@@ -121,17 +115,17 @@ public class OutputGPSTrace {
 		gpx.getTrk().add(trk) ;
 		return gpx ;
 	}
-	
+
 	public static WptType convert(SimpleGpxPoint p) {
-		
+
 		WptType pt = new WptType() ;
 		pt.setLat(new BigDecimal(p.lat)) ;
 		pt.setLon(new BigDecimal(p.lon)) ;
-		pt.setTime(p.date) ;
-		
+		pt.setTime(p.getXMLDate()) ;
+
 		return pt ;
 	}
-	
+
 	/**
 	 * Computes the distance in kms between two points
 	 * @param fromLat
@@ -144,6 +138,25 @@ public class OutputGPSTrace {
 		LatLon l1 = new LatLon(fromLat, fromLon) ;
 		LatLon l2 = new LatLon(toLat, toLon) ;
 		return ((double)LatLon.distanceInMeters(l1, l2))/1000 ;	
+	}
+
+	/**
+	 * Fills with static points between the two dates at the given location
+	 * @param start
+	 * @param end
+	 * @param lat
+	 * @param lon
+	 * @return
+	 */
+	public static List<SimpleGpxPoint> filling(long start, long end,
+			double lat, double lon){
+		long duration = (end - start)/1000 ;
+		List<SimpleGpxPoint> p = new ArrayList<>() ;
+		for(int i = 1 ; i < duration/pointTime ; i++)
+		{
+			p.add(new SimpleGpxPoint(lat, lon, start + 1000 * i * pointTime)) ;
 		}
+		return p ;
+	}
 
 }

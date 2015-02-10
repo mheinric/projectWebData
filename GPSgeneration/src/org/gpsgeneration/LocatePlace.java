@@ -11,12 +11,12 @@ import com.graphhopper.reader.pbf.PbfReader;
 import com.graphhopper.reader.pbf.Sink;
 import com.graphhopper.util.shapes.GHPlace;
 
-public class locatePlace {
+public class LocatePlace {
 
-	//private GHPlace res = new GHPlace(0, 0) ;;
 	private double latc = 0;
 	private double lonc = 0;
 	private OSMNode min = new OSMNode(0,0,0);
+	
 
 	public OSMNode find(String folderName, double lat, double lon){
 		latc = lat;

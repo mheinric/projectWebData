@@ -1,5 +1,7 @@
 package org.gpsgeneration;
 
+import java.util.GregorianCalendar;
+
 import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import javax.xml.datatype.XMLGregorianCalendar;
@@ -22,16 +24,35 @@ public class SimpleGpxPoint extends GHPoint {
 			System.exit(1) ;
 		}
 	}
-	public final XMLGregorianCalendar date ;
 	
-	public SimpleGpxPoint(double lat, double lon, int year, int month, int day, int hour, int min, int sec) {
+	/**
+	 * Date in milliseconds
+	 */
+	public long date ;
+	
+	public SimpleGpxPoint(double lat, double lon, long date) {
 		super(lat, lon) ;
-		this.date = fact.newXMLGregorianCalendar(year, month, day, hour, min, sec, 0, 0) ;
+		this.date = date ;
 	}
 	
 	public SimpleGpxPoint(double lat, double lon, XMLGregorianCalendar date) {
 		super(lat, lon) ;
-		this.date = date ;
+		this.date = date.toGregorianCalendar().getTimeInMillis() ;
+	}
+	
+	public XMLGregorianCalendar getXMLDate(){
+		GregorianCalendar calendar = new GregorianCalendar() ;
+		calendar.setTimeInMillis(date) ;
+		return fact.newXMLGregorianCalendar(calendar) ;
+	}
+	
+	/**
+	 * Converts from the calendar to time in ms
+	 * @param c
+	 * @return
+	 */
+	public static long getTime(XMLGregorianCalendar c){
+		return c.toGregorianCalendar().getTimeInMillis() ;
 	}
 
 }

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<eventTrace xmlns="https://github.com/mheinric/projectWebData" >
+<moveAction>
+	<fromLocation>
+		<lat>48.5</lat>
+		<lon>2.1</lon>
+	</fromLocation>
+	<toLocation>
+		<lat>48.8</lat>
+		<lon>2.3</lon>
+	</toLocation>
+	<startTime>2015-02-05T18:01:59.999Z</startTime>
+	<!--endTime>2015-02-05T18:11:59.999Z</endTime-->
+	<transport>car</transport>
+</moveAction>
+</eventTrace>

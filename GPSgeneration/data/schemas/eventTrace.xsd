@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
 	xmlns="https://github.com/mheinric/projectWebData" 
-	targetNamespace="https://github.com/mheinric/projectWebData" 
+	targetNamespace="https://github.com/mheinric/projectWebData"
 	elementFormDefault="qualified">
 
 	<xs:element name="eventTrace">
@@ -33,7 +33,7 @@
 				<xs:element name="lat" type="xs:double" />
 				<xs:element name="lon" type="xs:double" />
 				<xs:element name="precision" type="xs:double" minOccurs="0"/>
-				<xs:element name="description" type="xs:string" />
+				<xs:element name="description" type="xs:string" minOccurs="0"/>
 			</xs:sequence>
 			<xs:element name="refId" type="xs:IDREF"/>
 		</xs:choice>

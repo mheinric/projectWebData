@@ -1,7 +1,6 @@
 package org.gpsgeneration;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Properties;
@@ -11,10 +10,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 
 import org.gpsgeneration.eventTrace.EventTrace;
 import org.gpsgeneration.gpx.GpxType;
-
-import com.graphhopper.reader.OSMElement;
-import com.graphhopper.reader.pbf.PbfReader;
-import com.graphhopper.reader.pbf.Sink;
 
 public class Main {
 
