@@ -3,21 +3,36 @@ package org.gpsgeneration;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.List;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 
 import org.gpsgeneration.eventTrace.EventTrace;
-import org.gpsgeneration.gpx.GpxType;
 
 public class Main {
 
+	/**
+	 * Input file
+	 */
 	static String inputFile ;
+	/**
+	 * Folder containing the data
+	 */
 	static String dataFolder ;
+	/**
+	 * Outfile
+	 */
 	static String outFile ;
+	/**
+	 * Temporary folder used by graphHopper
+	 */
+	static String tempFolder ;
 	
 	static Properties config = new Properties() ;
+	
+	static NoiseGenerator noiseGenerator = new NoiseGenerator() ;
 
 	/**
 	 * Entry point of the application
@@ -29,13 +44,15 @@ public class Main {
 	 */
 	public static void main(String[] args) {
 		parseArgs(args) ;
+		loadConfig() ;
 
 		EventTrace input = EventTraceRead.read(inputFile) ;
 		
 		SimpleRouting sr = new SimpleRouting(dataFolder) ;
 		sr.preprocess(input) ;
-		GpxType res = sr.processInput(input) ;
-		GpxIO.write(res) ;
+		List<SimpleGpxPoint> res = sr.processInput(input) ;
+		noiseGenerator.addNoise(res) ;
+		GpxIO.write(OutputGPSTrace.convert(res)) ;
 	}
 
 	public static void parseArgs(String[] args){
@@ -52,6 +69,16 @@ public class Main {
 					System.exit(1) ;
 				}
 				outFile = args[i+1] ;
+				i += 2 ;
+				break ;
+			case "-temp" :
+				if(i == args.length -1)
+				{
+					System.err.println("Option -o expects an other argument") ;
+					printUsage() ;
+					System.exit(1) ;
+				}
+				tempFolder = args[i+1] ;
 				i += 2 ;
 				break ;
 
@@ -103,5 +130,10 @@ public class Main {
 		}
 		String timeStep = config.getProperty("timestep", "60") ;
 		OutputGPSTrace.pointTime = Integer.parseInt(timeStep) ;
+		if(config.containsKey("noise-folder"))
+			noiseGenerator.inferParam(dataFolder + "/" + config.getProperty("noise-folder")) ;
+		else
+			if(config.containsKey("noise-param"))
+				noiseGenerator.noiseParam = Double.parseDouble(config.getProperty("noise-param")) ;
 	}
 }

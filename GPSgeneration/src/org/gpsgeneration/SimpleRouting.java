@@ -15,7 +15,6 @@ import org.gpsgeneration.eventTrace.EventTrace;
 import org.gpsgeneration.eventTrace.Location;
 import org.gpsgeneration.eventTrace.MoveAction;
 import org.gpsgeneration.eventTrace.TransportType;
-import org.gpsgeneration.gpx.GpxType;
 import org.openstreetmap.osm.data.coordinates.LatLon;
 
 import com.graphhopper.GHRequest;
@@ -87,7 +86,7 @@ public class SimpleRouting {
 	 * @param trace
 	 * @return
 	 */
-	public GpxType processInput(EventTrace trace) {
+	public List<SimpleGpxPoint> processInput(EventTrace trace) {
 		List<SimpleGpxPoint> result = new ArrayList<>() ;
 		for(MoveAction action : trace.getMoveAction())
 		{
@@ -101,7 +100,7 @@ public class SimpleRouting {
 			}
 			result.addAll(p) ;
 		}
-		return OutputGPSTrace.convert(result) ;
+		return result ;
 	}
 
 	/**

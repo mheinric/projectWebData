@@ -117,8 +117,7 @@ public class LocatePlace {
 		Sink s = new Sink() {
 			@Override
 			public void process(OSMElement e) {
-				if((e instanceof OSMNode) && 
-						(e.getTag("amenity") != null || e.getTag("building") != null))
+				if((e instanceof OSMNode) && e.hasTag("amenity"))
 				{
 					OSMNode enode = (OSMNode) e;
 					double elat = enode.getLat();

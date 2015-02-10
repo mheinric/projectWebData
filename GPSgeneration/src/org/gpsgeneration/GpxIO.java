@@ -3,7 +3,6 @@ package org.gpsgeneration;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Enumeration;
 
@@ -76,16 +75,24 @@ public class GpxIO {
 	/**
 	 * Reads a GpxType object from its XML representation
 	 * @param fileName : the name of the file to read
-	 * @return The GpxType object created from the XML file
-	 * @throws JAXBException 
-	 * @throws IOException 
-	 * @throws URISyntaxException 
+	 * @return The GpxType object created from the XML file 
 	 */
+	public static GpxType read(String fileName) {
+		File f = new File(fileName) ;
+		return read(f) ;
+	}
+	
 	@SuppressWarnings("unchecked")
-	public static GpxType read(String fileName) throws JAXBException, URISyntaxException, IOException{
-		Unmarshaller um = jcontext.createUnmarshaller() ;
-		um.setSchema(GPX_SCHEMA) ;
-		return ((JAXBElement<GpxType>) um.unmarshal(new File(load(fileName).toURI()))).getValue() ;
+	public static GpxType read(File file) {
+		try {
+			Unmarshaller um = jcontext.createUnmarshaller();
+			um.setSchema(GPX_SCHEMA) ;
+			return ((JAXBElement<GpxType>) um.unmarshal(file)).getValue() ;
+		} catch (JAXBException e) {
+			System.out.println("Error while parsing file " + e ) ;
+			System.exit(1) ;
+			return null ;
+		}
 	}
 	
 	
