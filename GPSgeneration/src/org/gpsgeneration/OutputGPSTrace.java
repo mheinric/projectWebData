@@ -50,14 +50,20 @@ public class OutputGPSTrace {
 	 * @throws DatatypeConfigurationException 
 	 */
 	public static List<SimpleGpxPoint> getPoints(GraphHopper gh, PointList l, 
-			XMLGregorianCalendar date, String mode) 
-			throws DatatypeConfigurationException {
+			XMLGregorianCalendar date, String mode) {
 		assert(l.size() > 0) ;
 		List<SimpleGpxPoint> outl = new ArrayList<>() ;
 		FlagEncoder e  = gh.getEncodingManager().getEncoder(mode) ;
 	
 		LocationIndex index = gh.getLocationIndex() ;
-		DatatypeFactory fact = DatatypeFactory.newInstance() ;
+		DatatypeFactory fact = null ;
+		try{
+			fact = DatatypeFactory.newInstance() ;
+		} catch (DatatypeConfigurationException error) {
+			System.out.println("Fatal Error : " + error.getMessage()) ;
+			System.exit(1) ;
+		}
+		
 		outl.add(new SimpleGpxPoint(l.getLat(0), l.getLon(0), (XMLGregorianCalendar) date.clone())) ;
 		
 		//Last point got through
@@ -85,11 +91,11 @@ public class OutputGPSTrace {
 				
 				SimpleGpxPoint p = new SimpleGpxPoint(last.lat() + diffLat, last.lon() + diffLon, newDate) ;
 				outl.add(p) ;
-				elapsedTime = 0 ;
 				last = new LatLon(p.lat, p.lon);
 				distance = distance(last.lat(), last.lon(), nextLat, nextLon) ;
 				segTime = distance / speed * 3600 ;
-				totalTime += pointTime ;
+				totalTime += pointTime - elapsedTime ;
+				elapsedTime = 0 ;
 			}
 			elapsedTime += segTime ;
 			totalTime += segTime ;
@@ -103,6 +109,7 @@ public class OutputGPSTrace {
 
 		return outl ;
 	}
+	
 	
 	public static GpxType convert(List<SimpleGpxPoint> l) {
 		GpxType gpx = new GpxType() ;

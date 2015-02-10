@@ -43,11 +43,17 @@ public class EventTraceRead {
 	
 	
 	@SuppressWarnings("unchecked")
-	public static EventTrace read(String fileName) throws JAXBException {
+	public static EventTrace read(String fileName) {
+		try{
 		File f = new File(fileName) ;
 		Unmarshaller um = jcontext.createUnmarshaller() ;
 		um.setSchema(EVT_SCHEMA) ;
 		return  ((JAXBElement<EventTrace>) um.unmarshal(f)).getValue() ;
+		} catch (JAXBException e) {
+			System.out.println("Error occured while reading input : " + e.getMessage()) ;
+			System.exit(1) ;
+			return null ;
+		}
 	}
 
 }

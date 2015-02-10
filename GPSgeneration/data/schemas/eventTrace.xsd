@@ -23,7 +23,6 @@
 			<xs:element name="minStartTime" type="xs:dateTime" minOccurs="0"/>
 			
 			<xs:element name="transport" type="transportType" minOccurs="0" default="car"/>
-			<xs:any minOccurs="0" maxOccurs="unbounded" />
 		</xs:sequence>
 	</xs:complexType>
 	
@@ -32,12 +31,12 @@
 			<xs:sequence>
 				<xs:element name="id" type="xs:ID" minOccurs="0" />
 				<xs:element name="lat" type="xs:double" />
-				<xs:element name="long" type="xs:double" />
+				<xs:element name="lon" type="xs:double" />
 				<xs:element name="precision" type="xs:double" minOccurs="0"/>
 				<xs:element name="description" type="xs:string" />
 			</xs:sequence>
 			<xs:element name="refId" type="xs:IDREF"/>
-		<xs:choice>
+		</xs:choice>
 	</xs:complexType>
 	
 	<xs:simpleType name="transportType" >

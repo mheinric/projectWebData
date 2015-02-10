@@ -9,6 +9,9 @@ import java.util.Properties;
 import javax.xml.bind.JAXBException;
 import javax.xml.datatype.DatatypeConfigurationException;
 
+import org.gpsgeneration.eventTrace.EventTrace;
+import org.gpsgeneration.gpx.GpxType;
+
 import com.graphhopper.reader.OSMElement;
 import com.graphhopper.reader.pbf.PbfReader;
 import com.graphhopper.reader.pbf.Sink;
@@ -29,35 +32,14 @@ public class Main {
 	 * @throws URISyntaxException 
 	 * @throws DatatypeConfigurationException 
 	 */
-	public static void main(String[] args) throws JAXBException, URISyntaxException, IOException, DatatypeConfigurationException {
+	public static void main(String[] args) {
 		parseArgs(args) ;
 
-		Sink s = new Sink() {
-			private int i = 0 ;
-
-			@Override
-			public void process(OSMElement e) {
-				if(e.hasTag("natural", "coastline"))
-				{
-					i++ ;
-					if(i % 100000 == 0)
-						System.out.println(i) ;
-				}
-
-			}
-
-			@Override
-			public void complete() {
-				System.out.println("Total : " + i) ;
-
-			}
-		};
-
-		PbfReader reader = new PbfReader(new FileInputStream(dataFolder + "/map.osm.pbf"), s, 1) ;
-		//reader.run() ;
-		//System.exit(0) ;
+		EventTrace input = EventTraceRead.read(inputFile) ;
+		
 		SimpleRouting sr = new SimpleRouting(dataFolder) ;
-		sr.doRouting(inputFile, outFile) ;
+		GpxType res = sr.processInput(input) ;
+		GpxIO.write(res) ;
 	}
 
 	public static void parseArgs(String[] args){

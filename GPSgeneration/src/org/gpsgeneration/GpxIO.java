@@ -56,31 +56,21 @@ public class GpxIO {
 
 
 	/**
-	 * Writes the trace given as argument to the standard output
+	 * Writes the GPS trace in the output file
 	 * @param trace : the trace to write in XML
-	 * @throws JAXBException
-	 */
-	public static void write(GpxType trace) throws JAXBException{
-		JAXBElement<GpxType> el = objectFactory.createGpx(trace) ;
-		Marshaller marshaller = jcontext.createMarshaller() ;
-		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		marshaller.marshal(el, System.out) ;
-	}
-
-	/**
-	 * Writes the GPS trace in the file given as argument
-	 * @param trace : the trace to write in XML
-	 * @param fileName : the name of the file to create
 	 * @throws JAXBException
 	 * @throws FileNotFoundException
 	 */
-	public static void write(GpxType trace, String fileName) 
-			throws JAXBException, FileNotFoundException {
-
+	public static void write(GpxType trace) {
+		try{
 		JAXBElement<GpxType> el = objectFactory.createGpx(trace) ;
 		Marshaller marshaller = jcontext.createMarshaller() ;
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
-		marshaller.marshal(el, new File(fileName)) ;
+		marshaller.marshal(el, new File(Main.outFile)) ;
+		} catch (JAXBException e) {
+			System.out.println("Error while writing output file : " + e.getMessage()) ;
+			System.exit(1) ;
+		}
 	}
 
 	/**
