@@ -33,6 +33,7 @@ public class Main {
 		EventTrace input = EventTraceRead.read(inputFile) ;
 		
 		SimpleRouting sr = new SimpleRouting(dataFolder) ;
+		sr.preprocess(input) ;
 		GpxType res = sr.processInput(input) ;
 		GpxIO.write(res) ;
 	}

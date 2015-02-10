@@ -4,14 +4,19 @@ package org.gpsgeneration;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
 import org.gpsgeneration.eventTrace.EventTrace;
+import org.gpsgeneration.eventTrace.Location;
 import org.gpsgeneration.eventTrace.MoveAction;
 import org.gpsgeneration.eventTrace.TransportType;
 import org.gpsgeneration.gpx.GpxType;
+import org.openstreetmap.osm.data.coordinates.LatLon;
 
 import com.graphhopper.GHRequest;
 import com.graphhopper.GHResponse;
@@ -27,19 +32,25 @@ import com.graphhopper.util.shapes.GHPlace;
  *
  */
 public class SimpleRouting {
-	
-	private LocatePlace locate = new LocatePlace() ;
-	
+
+	private LocatePlace locate = new LocatePlace(Main.dataFolder) ;
+
 	private Path folderPath ;
 	private GraphHopper gh = new GraphHopper() ;
+
+	private Map<Object, LatLon> idToLocation = new HashMap<>() ;
+
+	private Location lastLocation = null ;
 	
+	Random rand = new Random() ;
+
 	public SimpleRouting(String folderName) {
 		String userDir = System.getProperty("user.dir") ;
 		folderPath = Paths.get(userDir) ;
 		folderPath = folderPath.resolve(folderName) ;
 		importGraph(gh, "FOOT," + CustomCarEncoder.NAME + "," + TrainFlagEncoder.NAME) ;
 	}
-	
+
 	/**
 	 * Imports the graph
 	 * @param g
@@ -54,7 +65,23 @@ public class SimpleRouting {
 		g.importOrLoad() ;
 		System.out.println("import: DONE") ;
 	}
-	
+
+	public void preprocess(EventTrace trace) {
+		for(MoveAction action : trace.getMoveAction())
+		{
+			preprocess(action.getFromLocation()) ;
+			preprocess(action.getToLocation()) ;
+		}
+		locate.parse() ;
+	}
+
+	private void preprocess(Location loc){
+		if(loc == null)
+			return ;
+		if(loc.getRefId() == null && loc.getPrecision() != null)
+			locate.addQuery(loc.getLat(), loc.getLon(), loc.getPrecision()) ;
+	}
+
 	/**
 	 * processes the input file
 	 * @param trace
@@ -65,7 +92,7 @@ public class SimpleRouting {
 		for(MoveAction action : trace.getMoveAction())
 		{
 			List<SimpleGpxPoint> p = processEvent(action) ;
-			
+
 			if(! result.isEmpty())
 			{
 				result.addAll(OutputGPSTrace.filling(
@@ -76,30 +103,33 @@ public class SimpleRouting {
 		}
 		return OutputGPSTrace.convert(result) ;
 	}
-	
+
 	/**
 	 * Process one single event, and outputs the corresponding points
 	 * @param action
 	 * @return
 	 */
 	private List<SimpleGpxPoint> processEvent(MoveAction action) {
-		double startLat = action.getFromLocation().getLat() ;
-		double startLon = action.getFromLocation().getLon() ;
-		double endLat = action.getToLocation().getLat();
-		double endLon = action.getToLocation().getLon();
-		String tmode = getMode(action.getTransport()) ;
+
+		LatLon start = processLocation(action.getFromLocation()) ;
+		LatLon end = processLocation(action.getToLocation()) ;
 		
+		
+		lastLocation = action.getToLocation() ;
+		
+		String tmode = getMode(action.getTransport()) ;
+
 		XMLGregorianCalendar startTime = action.getStartTime() ;
 		XMLGregorianCalendar endTime = action.getEndTime() ;
-		
-		PointList l = doRouting(startLat, startLon, endLat, endLon) ;
+
+		PointList l = doRouting(start.lat(), start.lon(), end.lat(), end.lon()) ;
 		if(startTime != null)
 		{
 			long sTime = SimpleGpxPoint.getTime(startTime) ;
 			if(endTime != null)
 			{
 				long eTime = SimpleGpxPoint.getTime(endTime) ;
-				
+
 				List<SimpleGpxPoint> lp = OutputGPSTrace.getPoints(gh, l, 
 						startTime, tmode) ;
 				long realEnd = lp.get(lp.size() -1).date ; 
@@ -134,7 +164,45 @@ public class SimpleRouting {
 			}
 		}
 	}
-	
+
+	/**
+	 * Given a location, returns the corresponding coordinates.
+	 * Handles IDs, and precision in the requests
+	 * @param loc
+	 * @return
+	 */
+	public LatLon processLocation(Location loc){
+		if(loc == null)
+			return new LatLon(lastLocation.getLat(), lastLocation.getLon()) ;
+		if(loc.getRefId() != null)
+		{
+			Location refLoc = (Location) loc.getRefId() ;
+			
+			if(idToLocation.containsKey(refLoc.getId()))
+				return idToLocation.get(refLoc.getId()) ;
+			else
+				throw new RuntimeException("Id " + loc.getRefId() 
+						+ " is referenced, but its value is not defined before") ;
+						
+		}
+
+		LatLon ll ;
+		if(loc.getPrecision() == null)
+			ll = new LatLon(loc.getLat(), loc.getLon()) ;
+		else 
+		{
+			ll = locate.getResult(loc.getLat(), loc.getLon(), loc.getPrecision()) ;
+		}
+		if(ll == null) 
+		{
+			ll = new LatLon(loc.getLat() + (rand.nextDouble()*2 -1)*loc.getPrecision(),
+					loc.getLon() + (rand.nextDouble()*2 -1)*loc.getPrecision()) ;
+		}
+		if(loc.getId() != null)
+			idToLocation.put(loc.getId(), ll) ;
+		return ll ;
+	}
+
 	/**
 	 * Returns the transport mode used to query the map
 	 * @param transport
@@ -154,20 +222,20 @@ public class SimpleRouting {
 			System.out.println("Warning : Unexpected Transport mode " + transport) ;
 			return CustomCarEncoder.NAME ;
 		}
-		
+
 	}
-	
+
 	/**
 	 * Gets the path between two points
 	 */
 	public PointList doRouting(double startLat, double startLon, double endLat, double endLon) {
-		
+
 		GHPlace startPlace = new GHPlace(startLat, startLon) ;
 		GHPlace endplace = new GHPlace( endLat, endLon);
-		
+
 		GHRequest request = new GHRequest(startPlace,  endplace).setVehicle(CustomCarEncoder.NAME) ;
 		GHResponse response = gh.route(request) ;
-		
+
 		PointList l = response.getPoints() ;
 		if(response.hasErrors())
 		{

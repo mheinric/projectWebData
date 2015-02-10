@@ -1,9 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" 
-	xmlns="https://github.com/mheinric/projectWebData" 
-	targetNamespace="https://github.com/mheinric/projectWebData"
-	elementFormDefault="qualified">
-
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" >
+<!-- elementFormDefault="qualified" -->
 	<xs:element name="eventTrace">
 		<xs:complexType>
 			<xs:sequence>
@@ -14,7 +11,7 @@
 	
 	<xs:complexType name="moveAction">
 		<xs:sequence>
-			<xs:element name="fromLocation" type="location"/>
+			<xs:element name="fromLocation" type="location" minOccurs="0"/>
 			<xs:element name="toLocation" type="location"/>
 			
 			<xs:element name="startTime" type="xs:dateTime" minOccurs="0"/>

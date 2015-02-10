@@ -82,6 +82,8 @@
     <delete dir="${build.dir}"/>
     <delete dir="${doc.dir}"/>
     <delete dir="${jar.dir}"/>
+    <delete dir="${gpx.dir}"/>
+    <delete dir="${eventTrace.dir}"/>
   </target>
   
   <target name="clean-all" depends="clean" description="clean everything including dowloaded libraries">
