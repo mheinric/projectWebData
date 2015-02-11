@@ -45,7 +45,7 @@ java -jar jar/GpsGeneration.jar [-o <out-file>] [-t <temp-file>] <path-to-data> 
 ```
 
 Where we have :
-- <path-to-data> is the path to a folder that contains : 
+- &lt path-to-data &gt is the path to a folder that contains : 
 	- a map file named map.osm.pbf
 	- optionnally a config.cfg and a maxspeed.properties file see GpsGeneration/example folder for examples
 	
