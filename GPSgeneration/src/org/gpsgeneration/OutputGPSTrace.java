@@ -163,5 +163,29 @@ public class OutputGPSTrace {
 		}
 		return p ;
 	}
+	
+	/**
+	 * Produces a straight line between two points
+	 * @param fromLat
+	 * @param fromLon
+	 * @param toLat
+	 * @param toLon
+	 * @param time
+	 * @return
+	 */
+	public static List<SimpleGpxPoint> staightLine(double fromLat, double fromLon, 
+			double toLat, double toLon, double speed) {
+		List<SimpleGpxPoint> l = new ArrayList<>() ;
+		l.add(new SimpleGpxPoint(fromLat, fromLon, 0)) ;
+		double distance = LatLon.distanceInMeters(fromLat, fromLon, toLat, toLon) ;
+		double time = (distance /1000) / speed*3600 ;
+		for(int i = 1 ; i*pointTime < time ; i++)
+		{
+			double lat = fromLat + (toLat - fromLat) / distance*1000 * i *pointTime/3600 * speed;
+			double lon = fromLon + (toLon - fromLon) / distance*1000 * i *pointTime/3600 * speed;
+			l.add(new SimpleGpxPoint(lat, lon, i * pointTime * 1000)) ;
+		}
+		return l ;
+	}
 
 }

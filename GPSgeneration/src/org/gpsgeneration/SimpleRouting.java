@@ -129,12 +129,11 @@ public class SimpleRouting {
 
 		String tmode = getMode(action.getTransport()) ;
 
-		PointList l = doRouting(start.lat(), start.lon(), end.lat(), end.lon(), tmode) ;
-		List<SimpleGpxPoint> ptList = OutputGPSTrace.getPoints(gh, l, 0, getMode(action.getTransport())) ;
+		List<SimpleGpxPoint> ptList = doRouting(start.lat(), start.lon(), end.lat(), end.lon(), tmode) ;
 		matchDates(ptList, action) ;
 		return ptList ;
 	}
-
+	
 
 	private List<SimpleGpxPoint> processTrainEvent(MoveAction action) {
 
@@ -144,36 +143,27 @@ public class SimpleRouting {
 		LatLon trainStart = locate.getStation(sloc.lat(), sloc.lon()) ;
 		LatLon trainEnd = locate.getStation(eloc.lat(), eloc.lon()) ;
 
-		PointList l1 = doRouting(sloc.lat(), sloc.lon(), 
+		List<SimpleGpxPoint> l1 = doRouting(sloc.lat(), sloc.lon(), 
 				trainStart.lat(), trainStart.lon(), CustomCarEncoder.NAME) ;
-		boolean train = true ;
-		PointList l2 = doRouting(trainStart.lat(), trainStart.lon(),
-				trainEnd.lat(), trainEnd.lon(), TrainFlagEncoder.NAME) ;
-		if(l2.isEmpty())
-		{
-			train = false ;
-			l2 = doRouting(trainStart.lat(), trainStart.lon(),
-					trainEnd.lat(), trainEnd.lon(), CustomCarEncoder.NAME) ;
-		}
-		PointList l3 = doRouting(trainEnd.lat(), trainEnd.lon(), 
+		
+		List<SimpleGpxPoint> l2 = doRouting(trainStart.lat(), trainStart.lon(),
+				trainEnd.lat(), trainEnd.lon(), TrainFlagEncoder.NAME, CustomCarEncoder.NAME) ;
+		
+		List<SimpleGpxPoint> l3 = doRouting(trainEnd.lat(), trainEnd.lon(), 
 				eloc.lat(), eloc.lon(), CustomCarEncoder.NAME) ;
 
-		List<SimpleGpxPoint> ptList = OutputGPSTrace.getPoints(gh, l1, 0, CustomCarEncoder.NAME) ;
-		if(train)
-			ptList.addAll(OutputGPSTrace.getPoints(gh, l2, ptList.get(ptList.size() -1).date,
-					TrainFlagEncoder.NAME)) ;
-		else
-		{
-			System.out.println("No train way found, using car") ;
-			ptList.addAll(OutputGPSTrace.getPoints(gh, l2, ptList.get(ptList.size() -1).date,
-					CustomCarEncoder.NAME)) ;
-		}
+		double diffTime = l1.get(l1.size() -1).date + OutputGPSTrace.pointTime*1000 ;
+		for(SimpleGpxPoint pt : l2)
+			pt.date += diffTime ;
+		diffTime = l2.get(l2.size() -1).date + OutputGPSTrace.pointTime*1000 ;
+		for(SimpleGpxPoint pt : l3)
+			pt.date += diffTime ;
+		
+		l1.addAll(l2) ;
+		l1.addAll(l3) ;
 
-		ptList.addAll(OutputGPSTrace.getPoints(gh, l3, ptList.get(ptList.size() -1).date,
-					CustomCarEncoder.NAME)) ;
-		matchDates(ptList, action) ;
-
-		return ptList ;
+		matchDates(l1, action) ;
+		return l1 ;
 	}
 
 	/**
@@ -314,9 +304,10 @@ public class SimpleRouting {
 	}
 
 	/**
-	 * Gets the path between two points
+	 * Gets the path between two points, tries all the modes in this order
 	 */
-	public PointList doRouting(double startLat, double startLon, double endLat, double endLon, String mode) {
+	public List<SimpleGpxPoint> doRouting(double startLat, double startLon, double endLat, double endLon, 
+			String mode, String... otherModes) {
 
 		GHPlace startPlace = new GHPlace(startLat, startLon) ;
 		GHPlace endplace = new GHPlace( endLat, endLon);
@@ -327,9 +318,40 @@ public class SimpleRouting {
 		PointList l = response.getPoints() ;
 		if(response.hasErrors())
 		{
-			response.getErrors().get(0).printStackTrace() ;
-			System.exit(1) ;
+			System.out.println("Error while routing " + response.getErrors().get(0)) ;
 		}
-		return l ;
+		double speed = 50 ;
+		switch (mode) {
+		case CustomCarEncoder.NAME:
+			speed = 60 ;
+			break;
+
+		case "foot":
+			speed = 5 ;
+			break;
+		case TrainFlagEncoder.NAME:
+			speed = 100 ;
+			break ;
+		}
+		
+		if(!response.isFound())
+		{
+			if(otherModes.length == 0)
+			{
+				System.out.println("No path found, going into straight line") ;
+				return OutputGPSTrace.staightLine(startLat, startLon, endLat, endLon, speed) ;
+			}
+			else
+			{
+				String nextMode = otherModes[0] ;
+				System.out.println("Not found for " + mode + " trying with " + mode) ;
+				String[] otherModes2 = new String[otherModes.length -1] ;
+				for(int i = 0 ; i < otherModes2.length ; i++)
+					otherModes2[i] = otherModes[i+1] ;
+				return doRouting(startLat, startLon, endLat, endLon, nextMode, otherModes2) ;
+			}
+		}
+		
+		return OutputGPSTrace.getPoints(gh, l, 0, mode) ;
 	}
 }
