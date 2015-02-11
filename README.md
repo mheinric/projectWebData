@@ -45,11 +45,11 @@ java -jar jar/GpsGeneration.jar [-o <out-file>] [-t <temp-file>] <path-to-data> 
 ```
 
 Where we have :
-- &lt path-to-data &gt is the path to a folder that contains : 
+- *path-to-data* is the path to a folder that contains : 
 	- a map file named map.osm.pbf
 	- optionnally a config.cfg and a maxspeed.properties file see GpsGeneration/example folder for examples
 	
-- <path-to-input> gives the location of the input event trace as an XML file.
-- <out-file> is the name of the file that will be produced
-- <temp-file> is the name of a temporary folder that will be used to store a compact representation of the graph. Once it is created, further queries to the same graph will be faster. However, you should not give the same name for two different map data. By default the temporary files will be created in folder **temp**.
+- *path-to-input* gives the location of the input event trace as an XML file.
+- *out-file* is the name of the file that will be produced
+- *temp-file* is the name of a temporary folder that will be used to store a compact representation of the graph. Once it is created, further queries to the same graph will be faster. However, you should not give the same name for two different map data. By default the temporary files will be created in folder **temp**.
 
