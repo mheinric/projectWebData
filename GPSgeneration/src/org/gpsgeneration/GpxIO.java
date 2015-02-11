@@ -95,7 +95,6 @@ public class GpxIO {
 		}
 	}
 	
-	
 	public static URL load(String path) throws IOException {
 		Enumeration<URL> ressourceURL = ClassLoader.getSystemResources(path) ;
 		if(!ressourceURL.hasMoreElements())

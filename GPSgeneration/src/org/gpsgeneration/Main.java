@@ -28,7 +28,7 @@ public class Main {
 	/**
 	 * Temporary folder used by graphHopper
 	 */
-	static String tempFolder ;
+	static String tempFolder = "temp" ;
 	
 	static Properties config = new Properties() ;
 	

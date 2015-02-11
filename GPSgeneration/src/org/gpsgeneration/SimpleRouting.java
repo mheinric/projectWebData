@@ -39,8 +39,8 @@ public class SimpleRouting {
 
 	private Map<Object, LatLon> idToLocation = new HashMap<>() ;
 
-	private Location lastLocation = null ;
-	
+	private LatLon lastLocation = null ;
+
 	Random rand = new Random() ;
 
 	public SimpleRouting(String folderName) {
@@ -59,7 +59,7 @@ public class SimpleRouting {
 		g.disableCHShortcuts();
 		g.setInMemory(true) ;
 		g.setOSMFile(folderPath.resolve("map.osm.pbf").toString()) ;
-		g.setGraphHopperLocation("temp");
+		g.setGraphHopperLocation(Main.tempFolder);
 		g.setEncodingManager(new EncodingManager(mode));
 		g.importOrLoad() ;
 		System.out.println("import: DONE") ;
@@ -68,10 +68,21 @@ public class SimpleRouting {
 	public void preprocess(EventTrace trace) {
 		for(MoveAction action : trace.getMoveAction())
 		{
+			if(action.getTransport() == TransportType.TRAIN)
+			{
+				trainProcess(action.getFromLocation()) ;
+				trainProcess(action.getToLocation()) ;
+			}
 			preprocess(action.getFromLocation()) ;
 			preprocess(action.getToLocation()) ;
 		}
 		locate.parse() ;
+	}
+
+	private void trainProcess(Location loc){
+		if(loc.getRefId() != null)
+			loc = (Location) loc.getRefId() ;
+		locate.addStationQuery(loc.getLat(), loc.getLon());
 	}
 
 	private void preprocess(Location loc){
@@ -109,59 +120,129 @@ public class SimpleRouting {
 	 * @return
 	 */
 	private List<SimpleGpxPoint> processEvent(MoveAction action) {
+		
+		if(action.getTransport() == TransportType.TRAIN)
+			return processTrainEvent(action) ;
 
 		LatLon start = processLocation(action.getFromLocation()) ;
 		LatLon end = processLocation(action.getToLocation()) ;
-		
-		
-		lastLocation = action.getToLocation() ;
-		
+
 		String tmode = getMode(action.getTransport()) ;
 
+		PointList l = doRouting(start.lat(), start.lon(), end.lat(), end.lon(), tmode) ;
+		List<SimpleGpxPoint> ptList = OutputGPSTrace.getPoints(gh, l, 0, getMode(action.getTransport())) ;
+		matchDates(ptList, action) ;
+		return ptList ;
+	}
+
+
+	private List<SimpleGpxPoint> processTrainEvent(MoveAction action) {
+
+		LatLon sloc = processLocation(action.getFromLocation()) ;
+		LatLon eloc = processLocation(action.getToLocation()) ;
+
+		LatLon trainStart = locate.getStation(sloc.lat(), sloc.lon()) ;
+		LatLon trainEnd = locate.getStation(eloc.lat(), eloc.lon()) ;
+
+		PointList l1 = doRouting(sloc.lat(), sloc.lon(), 
+				trainStart.lat(), trainStart.lon(), CustomCarEncoder.NAME) ;
+		boolean train = true ;
+		PointList l2 = doRouting(trainStart.lat(), trainStart.lon(),
+				trainEnd.lat(), trainEnd.lon(), TrainFlagEncoder.NAME) ;
+		if(l2.isEmpty())
+		{
+			train = false ;
+			l2 = doRouting(trainStart.lat(), trainStart.lon(),
+					trainEnd.lat(), trainEnd.lon(), CustomCarEncoder.NAME) ;
+		}
+		PointList l3 = doRouting(trainEnd.lat(), trainEnd.lon(), 
+				eloc.lat(), eloc.lon(), CustomCarEncoder.NAME) ;
+
+		List<SimpleGpxPoint> ptList = OutputGPSTrace.getPoints(gh, l1, 0, CustomCarEncoder.NAME) ;
+		if(train)
+			ptList.addAll(OutputGPSTrace.getPoints(gh, l2, ptList.get(ptList.size() -1).date,
+					TrainFlagEncoder.NAME)) ;
+		else
+		{
+			System.out.println("No train way found, using car") ;
+			ptList.addAll(OutputGPSTrace.getPoints(gh, l2, ptList.get(ptList.size() -1).date,
+					CustomCarEncoder.NAME)) ;
+		}
+
+		ptList.addAll(OutputGPSTrace.getPoints(gh, l3, ptList.get(ptList.size() -1).date,
+					CustomCarEncoder.NAME)) ;
+		matchDates(ptList, action) ;
+
+		return ptList ;
+	}
+
+	/**
+	 * Modifies the dates in the list to match with the contraints in the action.
+	 * @param ptList
+	 * @param action
+	 */
+	private void matchDates(List<SimpleGpxPoint> ptList, MoveAction action){
 		XMLGregorianCalendar startTime = action.getStartTime() ;
 		XMLGregorianCalendar endTime = action.getEndTime() ;
 
-		PointList l = doRouting(start.lat(), start.lon(), end.lat(), end.lon()) ;
 		if(startTime != null)
 		{
 			long sTime = SimpleGpxPoint.getTime(startTime) ;
+			long startDiff = sTime - ptList.get(0).date ;
+			for(SimpleGpxPoint pt :ptList)
+				pt.date += startDiff ;
+
+			if(endTime == null)
+				endTime = action.getMaxEndTime() ;
+
 			if(endTime != null)
 			{
 				long eTime = SimpleGpxPoint.getTime(endTime) ;
 
-				List<SimpleGpxPoint> lp = OutputGPSTrace.getPoints(gh, l, 
-						startTime, tmode) ;
-				long realEnd = lp.get(lp.size() -1).date ; 
+
+				long realEnd = ptList.get(ptList.size() -1).date ; 
 				if(realEnd - eTime > 0 )
 				{
 					double ratio = ((long) eTime - sTime) / (realEnd - sTime)  ;
-					for(SimpleGpxPoint p : lp)
+					for(SimpleGpxPoint p : ptList)
 						p.date = (long) (sTime + ratio * (p.date - sTime)) ;
 				}
-				return lp ;
+				return ;
 			}
 			else
-				return OutputGPSTrace.getPoints(gh, l, startTime, tmode) ;
+				return ;
 		}
 		else
 		{
 			if(endTime != null)
 			{
 				long eTime = SimpleGpxPoint.getTime(endTime) ;
-				List<SimpleGpxPoint> lp = OutputGPSTrace.getPoints(gh, l, 
-						endTime, tmode) ;
-				long realEnd = lp.get(lp.size() - 1).date ;
+
+				long realEnd = ptList.get(ptList.size() - 1).date ;
 				long diff = realEnd - eTime ;
-				for(SimpleGpxPoint p : lp)
+				for(SimpleGpxPoint p : ptList)
 					p.date -= diff ;
-				return lp ;
+
+				startTime = action.getMinStartTime() ;
+				if(startTime != null)
+				{
+					long sTime = SimpleGpxPoint.getTime(startTime) ;
+					long realStart = ptList.get(0).date ;
+					if(realStart < sTime)
+					{
+						double ratio = ((long) eTime - sTime) / (realEnd - sTime)  ;
+						for(SimpleGpxPoint p : ptList)
+							p.date = (long) (sTime + ratio * (p.date - sTime)) ;
+					}
+
+				}
+				return ;
 			}
 			else
 			{
 				throw new RuntimeException("Error in input file, you must " +
 						"provide either startTime or endTime") ;
-			}
-		}
+			}}
 	}
 
 	/**
@@ -172,26 +253,33 @@ public class SimpleRouting {
 	 */
 	public LatLon processLocation(Location loc){
 		if(loc == null)
-			return new LatLon(lastLocation.getLat(), lastLocation.getLon()) ;
+		{
+			if(lastLocation == null)
+			{
+				System.out.println("You must provide at least the first fromLocation") ;
+				System.exit(1) ;
+			}
+			return lastLocation ;
+		}
+			
 		if(loc.getRefId() != null)
 		{
 			Location refLoc = (Location) loc.getRefId() ;
-			
+
 			if(idToLocation.containsKey(refLoc.getId()))
 				return idToLocation.get(refLoc.getId()) ;
 			else
 				throw new RuntimeException("Id " + loc.getRefId() 
 						+ " is referenced, but its value is not defined before") ;
-						
+
 		}
 
 		LatLon ll ;
 		if(loc.getPrecision() == null)
 			ll = new LatLon(loc.getLat(), loc.getLon()) ;
 		else 
-		{
 			ll = locate.getResult(loc.getLat(), loc.getLon(), loc.getPrecision()) ;
-		}
+		
 		if(ll == null) 
 		{
 			ll = new LatLon(loc.getLat() + (rand.nextDouble()*2 -1)*loc.getPrecision(),
@@ -199,6 +287,7 @@ public class SimpleRouting {
 		}
 		if(loc.getId() != null)
 			idToLocation.put(loc.getId(), ll) ;
+		lastLocation = ll ;
 		return ll ;
 	}
 
@@ -216,7 +305,7 @@ public class SimpleRouting {
 		case FOOT :
 			return "foot" ;
 		case TRAIN :
-			return TrainFlagEncoder.NAME ;
+			return TrainFlagEncoder.NAME +",foot" ;
 		default :
 			System.out.println("Warning : Unexpected Transport mode " + transport) ;
 			return CustomCarEncoder.NAME ;
@@ -227,12 +316,12 @@ public class SimpleRouting {
 	/**
 	 * Gets the path between two points
 	 */
-	public PointList doRouting(double startLat, double startLon, double endLat, double endLon) {
+	public PointList doRouting(double startLat, double startLon, double endLat, double endLon, String mode) {
 
 		GHPlace startPlace = new GHPlace(startLat, startLon) ;
 		GHPlace endplace = new GHPlace( endLat, endLon);
 
-		GHRequest request = new GHRequest(startPlace,  endplace).setVehicle(CustomCarEncoder.NAME) ;
+		GHRequest request = new GHRequest(startPlace,  endplace).setVehicle(mode) ;
 		GHResponse response = gh.route(request) ;
 
 		PointList l = response.getPoints() ;

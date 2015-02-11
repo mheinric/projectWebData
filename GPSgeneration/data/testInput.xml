@@ -3,33 +3,15 @@
 <moveAction>
 	<fromLocation>
 		<id>home</id>
-		<lat>48.5</lat>
-		<lon>2.1</lon>
-		<precision>0.01</precision>
+		<lat>48.7943</lat>
+		<lon>2.18402</lon>
 	</fromLocation>
 	<toLocation>
-		<lat>48.8</lat>
-		<lon>2.3</lon>
-		<precision>0.01</precision>
+		<lat>48.80807</lat>
+		<lon>2.24103</lon>
 	</toLocation>
 	<startTime>2015-02-05T18:01:59.999Z</startTime>
-	<transport>car</transport>
-</moveAction>
-<moveAction>
-	<toLocation>
-		<lat>48.8</lat>
-		<lon>2.5</lon>
-		<precision>0.01</precision>
-	</toLocation>
-	<startTime>2015-02-05T19:01:59.999Z</startTime>
-	<transport>car</transport>
-</moveAction>
-<moveAction>
-	<toLocation>
-		<refId>home</refId>
-	</toLocation>
-	<startTime>2015-02-05T20:01:59.999Z</startTime>
-	<transport>car</transport>
+	<transport>train</transport>
 </moveAction>
 
 </eventTrace>

@@ -40,22 +40,14 @@ public class OutputGPSTrace {
 	 */
 	public static int pointTime = 60 ;
 
-	/**
-	 * Produces a series of GPxPoints from a series of points that were obtained by a query.  
-	 * @param gh
-	 * @param l
-	 * @param date
-	 * @return
-	 * @throws DatatypeConfigurationException 
-	 */
 	public static List<SimpleGpxPoint> getPoints(GraphHopper gh, PointList l, 
-			XMLGregorianCalendar date, String mode) {
+			long startDate, String mode) {
 		assert(l.size() > 0) ;
 		List<SimpleGpxPoint> outl = new ArrayList<>() ;
+		
 		FlagEncoder e  = gh.getEncodingManager().getEncoder(mode) ;
 
 		LocationIndex index = gh.getLocationIndex() ;
-		long startDate = SimpleGpxPoint.getTime(date) ;
 
 		outl.add(new SimpleGpxPoint(l.getLat(0), l.getLon(0), startDate)) ;
 
@@ -78,13 +70,12 @@ public class OutputGPSTrace {
 			while(elapsedTime + segTime > pointTime*1000)
 			{
 				totalTime += pointTime*1000 - elapsedTime ;
-				elapsedTime = 0 ;
-				
-				double diffLat = (nextLat - last.lat()) /distance *speed * (pointTime-elapsedTime)/3600/1000 ;
-				double diffLon = (nextLon - last.lon()) /distance *speed * (pointTime-elapsedTime)/3600/1000 ;
+
+				double diffLat = (nextLat - last.lat()) /distance *speed * (pointTime-elapsedTime/1000)/3600 ;
+				double diffLon = (nextLon - last.lon()) /distance *speed * (pointTime-elapsedTime/1000)/3600 ;
 				
 				long newDate = startDate + totalTime ;
-
+				elapsedTime = 0 ;
 				SimpleGpxPoint p = new SimpleGpxPoint(last.lat() + diffLat, last.lon() + diffLon, newDate) ;
 				outl.add(p) ;
 				last = new LatLon(p.lat, p.lon);
@@ -102,6 +93,20 @@ public class OutputGPSTrace {
 		outl.add(p) ;
 
 		return outl ;
+		
+	}
+	
+	/**
+	 * Produces a series of GPxPoints from a series of points that were obtained by a query.  
+	 * @param gh
+	 * @param l
+	 * @param date
+	 * @return
+	 * @throws DatatypeConfigurationException 
+	 */
+	public static List<SimpleGpxPoint> getPoints(GraphHopper gh, PointList l, 
+			XMLGregorianCalendar date, String mode) {
+		return getPoints(gh, l, SimpleGpxPoint.getTime(date), mode) ;
 	}
 
 

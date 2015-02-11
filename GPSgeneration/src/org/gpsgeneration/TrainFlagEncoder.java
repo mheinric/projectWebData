@@ -32,14 +32,14 @@ public class TrainFlagEncoder extends CarFlagEncoder {
 		acceptedRailways.add("funicular") ;
 		acceptedRailways.add("light_rail") ;
 		acceptedRailways.add("monorail") ;
-		//acceptedRailways.add("rail") ;
+		acceptedRailways.add("rail") ;
 		acceptedRailways.add("subway") ;
 		acceptedRailways.add("tram") ;
 		
 		defaultSpeed.put("funicular", 10) ;
 		defaultSpeed.put("light_rail", 10) ;
 		defaultSpeed.put("monorail", 50) ;
-		//defaultSpeed.put("rail", 150) ;
+		defaultSpeed.put("rail", 150) ;
 		defaultSpeed.put("subway", 60) ;
 		defaultSpeed.put("tram", 20) ;
 		
@@ -56,8 +56,12 @@ public class TrainFlagEncoder extends CarFlagEncoder {
 		String trainTag = way.getTag("railway") ;
 		if(trainTag != null && acceptedRailways.contains(trainTag))
 			return acceptBit ;
-		else 
-			return 0 ;
+		if(way.hasTag("highway", "pedestrian", "secondary", 
+				"tertiary", "residential", "secondary_link", "tertiary_link",
+				"road", "living_street", "footway", "steps", "path", "bridleway"))
+			return acceptBit ;
+		
+		return 0 ;
 	}
 	
 	@Override
@@ -69,7 +73,8 @@ public class TrainFlagEncoder extends CarFlagEncoder {
 	public long handleRelationTags(OSMRelation relation, long oldRelationTag){
 		if(relation.hasTag("railway", "station") 
 				|| relation.hasTag("public_transport", "platform", 
-						"stop_position", "stop_area", "station"))
+						"stop_position", "stop_area", "station")
+				|| relation.hasTag("site", "station"))
 		{
 			return relationCodeEncoder.setValue(0, 1) ;
 		}
@@ -80,7 +85,9 @@ public class TrainFlagEncoder extends CarFlagEncoder {
 	public long handleWayTags(OSMWay way, long allowed, long relationCode){
 		if((allowed & acceptBit) == 0 && relationCodeEncoder.getValue(relationCode) != 0)
 		{
-			return setSpeed(0, walkSpeed) ;
+			long encoded = setSpeed(0, walkSpeed) ;
+			encoded |= directionBitMask ;
+			return encoded ;
 		}
 		
 		if((allowed & acceptBit) == 0)
@@ -101,14 +108,15 @@ public class TrainFlagEncoder extends CarFlagEncoder {
 	
 	@Override
 	protected double getSpeed(OSMWay way){
-		return defaultSpeed.get(way.getTag("railway")) ;
+		Integer speed = defaultSpeed.get(way.getTag("railway")) ; 
+		if(speed != null)
+			return speed.doubleValue() ;
+		else
+			return walkSpeed ;
 	}
 	
 	public double getSpeed(long flags){
-		if(relationCodeEncoder.getValue(flags) != 0)
-			return walkSpeed ;
-		else 
-			return super.getSpeed(flags) ;
+		return super.getSpeed(flags) ;
 	}
 	
 	public Collection<TurnCostTableEntry> analyzeTurnRelation(OSMTurnRelation rel, OSMReader reader) {
