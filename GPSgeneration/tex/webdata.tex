@@ -59,6 +59,7 @@ Déplacements d'un individu véhiculé.\\
 Événement : points de départ et d'arrivée approximatifs, véhicule, date de début et de fin.
 \end{block}
 
+\onslide<2>
 \begin{block}{Programme :}
 \begin{itemize}
 \item Calcul des bâtiments les plus proches des événements.\\
@@ -68,7 +69,7 @@ Déplacements d'un individu véhiculé.\\
 \end{itemize}
 
 \end{block}
-
+\onslide<1,2>
 \begin{block}{Sorties : chemins (GPX)}
 Trace GPS qui respecte les contraintes liées à la carte et aux véhicules.
 \end{block}
@@ -128,7 +129,13 @@ Dépassement de mémoire (32 bits) pour 4 véhicules.
 \frame{ 
 \frametitle{Ajout d'un véhicule} 
 \framesubtitle{} 
-train ...
+\begin{itemize}
+\item première passe : déterminer les noeuds utiles
+\vspace{\baselineskip}
+\item deuxième passe : calculer les vitesses
+\vspace{\baselineskip}
+\item problème : déterminer exactement quels noeuds prendre
+\end{itemize}
 \vspace{\baselineskip}
 }
 

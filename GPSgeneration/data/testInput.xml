@@ -3,12 +3,12 @@
 <moveAction>
 	<fromLocation>
 		<id>home</id>
-		<lat>48.7943</lat>
-		<lon>2.18402</lon>
+		<lat> 48.6761394</lat>
+		<lon>2.3517694</lon>
 	</fromLocation>
 	<toLocation>
-		<lat>48.80807</lat>
-		<lon>2.24103</lon>
+		<lat> 48.8538757</lat>
+		<lon>2.3440941</lon>
 	</toLocation>
 	<startTime>2015-02-05T18:01:59.999Z</startTime>
 	<transport>train</transport>
